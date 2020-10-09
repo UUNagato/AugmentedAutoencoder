@@ -38,7 +38,7 @@ def deserializer(dataset):
 
     return (train_x, mask_x, train_y)
 
-def convertNPZ2TFRecord(npzpath : str, tfrecordpath : str):
+def convertNPZ2TFRecord(npzpath, tfrecordpath):
     with np.load(npzpath) as npzdata:
         # print all keys
         print (npzdata.files)
@@ -47,8 +47,8 @@ def convertNPZ2TFRecord(npzpath : str, tfrecordpath : str):
         
         # try to output a sample to look
         # debug mode, only output 10 data in order to test serialization
-        # data_size = npzdata['bgr_x'].shape[0]
-        data_size = 10  # debug
+        data_size = npzdata['bgr_x'].shape[0]
+        # data_size = 10  # debug
 
         # progressbar
         widgets = ['Processing: ', progressbar.Percentage(),
@@ -106,7 +106,7 @@ def convertNPZ2TFRecord(npzpath : str, tfrecordpath : str):
 
         # tester
         if check_file:
-            batch_size = min(max(int(data_size / 200), 1), 50)
+            batch_size = min(max(int(data_size / 20), 1), 1000)
 
             dataset = tf.data.TFRecordDataset(generateFilePath)
             dataset = dataset.map(deserializer)
