@@ -122,7 +122,7 @@ def main():
 
         # dataset.get_training_images(dataset_path, args)
     # dataset.load_bg_images(dataset_path)
-    multi_queue.create_tfrecord_training_images(dataset_path, args)
+    # multi_queue.create_tfrecord_training_images(dataset_path, args)
 
     if generate_data:
         print(('finished generating synthetic training data for ' + experiment_name))
