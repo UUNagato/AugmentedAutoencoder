@@ -439,4 +439,42 @@ class Codebook(object):
         if self.embed_bb:
             session.run(self.embed_obj_bbs_assign_op[model_name], {self.embed_obj_bbs: obj_bbs})
 
+    def update_embedding_prerendered(self, session, batch_size, data_path, preRendered, loaded_emb=None, loaded_obj_bbs=None):
+        from ae_embed_multi_prerendered import PreRenderedData
+        # model_name = os.path.basename(model_path).split('.')[0]
+        model_name = self._get_codebook_name(data_path)
+
+        if loaded_emb is None:
+            embedding_size = self._dataset.embedding_size
+            J = self._encoder.latent_space_size
+            embedding_z = np.empty( (embedding_size, J) )
+            obj_bbs = np.empty((embedding_size, 4))
+            widgets = ['Creating embedding: ', progressbar.Percentage(),
+                ' ', progressbar.Bar(),
+                ' ', progressbar.Counter(), ' / %s' % embedding_size,
+                ' ', progressbar.ETA(), ' ']
+            bar = progressbar.ProgressBar(maxval=embedding_size,widgets=widgets)
+            bar.start()
+            for a, e in u.batch_iteration_indices(embedding_size, batch_size):
+                batch, obj_bbs_batch = preRendered.get_batch(a, e)
+                #import cv2
+                #cv2.imshow('',u.tiles(batch,10,10))
+                #cv2.waitKey(0)
+                embedding_z[a:e] = session.run(self._encoder.z, feed_dict={self._encoder.x: batch})
+
+                if self.embed_bb:
+                    obj_bbs[a:e] = obj_bbs_batch
+
+                bar.update(e)
+            bar.finish()
+            # embedding_z = embedding_z.T
+            normalized_embedding = embedding_z / np.linalg.norm( embedding_z, axis=1, keepdims=True )
+        else:
+            normalized_embedding = loaded_emb
+            obj_bbs = loaded_obj_bbs
+
+        session.run(self.embedding_assign_op[model_name], {self.embedding: normalized_embedding})
+
+        if self.embed_bb:
+            session.run(self.embed_obj_bbs_assign_op[model_name], {self.embed_obj_bbs: obj_bbs})
 
