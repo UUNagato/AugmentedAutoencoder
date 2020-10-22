@@ -15,6 +15,7 @@ setup(
                             'ae_train = auto_pose.ae.ae_train:main',
                             'ae_embed = auto_pose.ae.ae_embed:main',
                             'ae_embed_multi = auto_pose.ae.ae_embed_multi:main',
+                            #'ae_embed_multi_prerendered = auto_pose.ae.ae_embed_multi_prerendered:main',
                             'ae_eval = auto_pose.eval.ae_eval:main',
                             'ae_test_embedding = auto_pose.test.ae_test_embedding:main',
                             'ae_compare = auto_pose.eval.comparative_report:main'],

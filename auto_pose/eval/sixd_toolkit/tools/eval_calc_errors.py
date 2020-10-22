@@ -145,6 +145,8 @@ def eval_calc_errors(eval_args, eval_dir):
                 # Sort the estimates by score (in descending order)
                 ests_sorted = sorted(enumerate(ests), key=lambda x: x[1]['score'],
                                      reverse=True)
+                
+                print("cut line 1")
 
                 # Select the required number of top estimated poses
                 if n_top == 0: # All estimates are considered
@@ -162,6 +164,7 @@ def eval_calc_errors(eval_args, eval_dir):
                     t_e = est['t']
 
                     errs_gts = {} # Errors w.r.t. GT poses of the same object
+                    print ("error types:{}".format(error_type))
                     for gt_id, gt in enumerate(scene_gt[im_id]):
                         if gt['obj_id'] != obj_id:
                             continue

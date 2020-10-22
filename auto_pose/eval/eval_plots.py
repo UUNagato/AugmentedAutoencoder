@@ -309,6 +309,7 @@ def compute_pca_plot_embedding(eval_dir, z_train, lon_lat=None, z_test=None, sav
         ax.legend()
 
         if save:
+            print ("saving PCA img in {}".format(os.path.join(eval_dir,'figures','pca_embedding.pdf')))
             pl.dump(fig,file(os.path.join(eval_dir,'figures','pca_embedding.pickle'),'wb'))
             plt.savefig(os.path.join(eval_dir,'figures','pca_embedding.pdf'))
 

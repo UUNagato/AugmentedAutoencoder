@@ -34,7 +34,7 @@ def get_gt_scene_crops(scene_id, eval_args, train_args, load_gt_masks=False):
 
     current_file_name = os.path.join(dataset_path, current_config_hash + '.npz')
 
-
+    print('get_gt_scene_crops, current file name:{}'.format(current_file_name))
     if os.path.exists(current_file_name):
         data = np.load(current_file_name)
         test_img_crops = data['test_img_crops'].item()
@@ -58,7 +58,6 @@ def get_gt_scene_crops(scene_id, eval_args, train_args, load_gt_masks=False):
         if load_gt_masks:
             mask_paths = glob.glob(os.path.join(load_gt_masks, '{:02d}/masks/*.npy'.format(scene_id)))
             gt_inst_masks = [np.load(mp) for mp in mask_paths] 
-        
 
         test_img_crops, test_img_depth_crops, bbs, bb_scores, bb_vis = generate_scene_crops(test_imgs, test_imgs_depth, gt, eval_args, 
                                                                                             (H_AE, W_AE), visib_gt=visib_gt,inst_masks=gt_inst_masks)
@@ -103,7 +102,6 @@ def get_sixd_gt_train_crops(obj_id, hw_ae, pad_factor=1.2, dataset='tless', cam_
     return test_img_crops
 
 def generate_scene_crops(test_imgs, test_depth_imgs, gt, eval_args, hw_ae, visib_gt = None, inst_masks=None):
-
     obj_id = eval_args.getint('DATA','OBJ_ID')
     estimate_bbs = eval_args.getboolean('BBOXES', 'ESTIMATE_BBS')
     pad_factor = eval_args.getfloat('BBOXES','PAD_FACTOR')
@@ -151,6 +149,7 @@ def generate_scene_crops(test_imgs, test_depth_imgs, gt, eval_args, hw_ae, visib
                             depth_crop = depth[top:bottom, left:right]
                     else:
                         if not estimate_masks:
+                            print("not estimate_masks branch is invoked")
                             mask = inst_masks[view]
                             img_copy = np.zeros_like(img)
                             img_copy[mask == (bbox_idx+1)] = img[mask == (bbox_idx+1)]
@@ -301,10 +300,13 @@ def get_all_scenes_for_obj(eval_args):
 
 
 def select_img_crops(crop_candidates, test_crops_depth, bbs, bb_scores, visibs, eval_args):
+    print("select_img_crops line1")
 
     estimate_bbs = eval_args.getboolean('BBOXES', 'ESTIMATE_BBS')
     single_instance = eval_args.getboolean('BBOXES', 'SINGLE_INSTANCE')
     icp = eval_args.getboolean('EVALUATION', 'ICP')
+
+    print("select_img_crops bbox:{}".format(visibs))
 
     if single_instance and estimate_bbs:
         idcs = np.array([np.argmax(bb_scores)])

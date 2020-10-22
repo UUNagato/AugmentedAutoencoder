@@ -6,6 +6,12 @@ import configparser
 import shutil
 import os
 import sys
+sys.path.append(".")
+sys.path.append("..")
+sys.path.append("../..")
+sys.path.append("/home/v-xli2/AugmentedAutoencoder/auto_pose/eval/sixd_toolkit/")
+sys.path.append("/home/v-xli2/AugmentedAutoencoder/auto_pose/eval")
+
 import time
 import glob
 import matplotlib
@@ -41,6 +47,8 @@ def main():
     log_dir = u.get_log_dir(workspace_path, experiment_name, experiment_group)
     train_cfg_file_path = u.get_train_config_exp_file_path(log_dir, experiment_name)
     eval_cfg_file_path = u.get_eval_config_file_path(workspace_path, eval_cfg=eval_cfg)
+
+    print ('train_cfg_path:{}, eval_cfg_path:{}'.format(train_cfg_file_path, eval_cfg_file_path))
 
     train_args = configparser.ConfigParser(inline_comment_prefixes="#")
     eval_args = configparser.ConfigParser(inline_comment_prefixes="#")
@@ -109,10 +117,12 @@ def main():
 
     external_path = eval_args.get('BBOXES','EXTERNAL')
 
-    test_embeddings = []  
+    test_embeddings = []
+    print("scenes:{}".format(scenes))  
     for scene_id in scenes:
 
         test_imgs = eval_utils.load_scenes(scene_id, eval_args)
+        print ("number of test imgs:{}".format(test_imgs.shape))
         test_imgs_depth = eval_utils.load_scenes(scene_id, eval_args, depth=True) if icp else None
 
         if estimate_bbs:
@@ -160,16 +170,16 @@ def main():
             os.makedirs(scene_res_dir)
 
         for view in range(noof_scene_views):
-            try:
-                test_crops, test_crops_depth, test_bbs, test_scores, test_visibs = eval_utils.select_img_crops(test_img_crops[view][obj_id], 
+            #try:
+            test_crops, test_crops_depth, test_bbs, test_scores, test_visibs = eval_utils.select_img_crops(test_img_crops[view][obj_id], 
                                                                                                                test_img_depth_crops[view][obj_id] if icp else None,
                                                                                                                bbs[view][obj_id],
                                                                                                                bb_scores[view][obj_id], 
                                                                                                                visibilities[view][obj_id], 
                                                                                                                eval_args)
-            except:
-                print('no detections')
-                continue
+            #except:
+            #    print('no detections')
+            #    continue
 
             print(view)
             preds = {}
@@ -253,7 +263,7 @@ def main():
                 min_t_err, min_R_err = eval_plots.print_trans_rot_errors(gts[view], obj_id, ts_est, ts_est_old, Rs_est, Rs_est_old)
                 t_errors_crop.append(min_t_err)
                 R_errors_crop.append(min_R_err)
-                                       
+                ''' Ignored, the server doesn't have monitor and framebuffer.                      
                 if eval_args.getboolean('PLOT','NEAREST_NEIGHBORS') and not icp:
                     for R_est, t_est in zip(Rs_est,ts_est):
                         pred_views.append(dataset.render_rot( R_est ,downSample = 2))
@@ -261,10 +271,10 @@ def main():
                 if eval_args.getboolean('PLOT','SCENE_WITH_ESTIMATE'):
                     eval_plots.plot_scene_with_estimate(test_imgs[view].copy(),icp_renderer.renderer if icp else dataset.renderer,Ks_test[view].copy(), Rs_est_old[0], 
                                                         ts_est_old[0], Rs_est[0], ts_est[0],test_bb, test_score, obj_id, gts[view], bb_preds[view] if estimate_bbs else None)
+                '''
 
-
-                if cv2.waitKey(1) == 32:
-                    cv2.waitKey(0)
+                # if cv2.waitKey(1) == 32:
+                #    cv2.waitKey(0)
 
 
             t_errors.append(t_errors_crop[np.argmin(np.linalg.norm(np.array(t_errors_crop),axis=1))])
@@ -275,19 +285,23 @@ def main():
             res_path = os.path.join(scene_res_dir,'%04d_%02d.yml' % (view,obj_id))
             inout.save_results_sixd17(res_path, preds, run_time=run_time)
             
+    print("output stage")
     if not os.path.exists(os.path.join(eval_dir,'latex')):
         os.makedirs(os.path.join(eval_dir,'latex'))
     if not os.path.exists(os.path.join(eval_dir,'figures')):
         os.makedirs(os.path.join(eval_dir,'figures'))
-
+    print("evaluation compute errors")
     if eval_args.getboolean('EVALUATION','COMPUTE_ERRORS'):
         eval_calc_errors.eval_calc_errors(eval_args, eval_dir)
+    print("evaluation evaluate errors")
     if eval_args.getboolean('EVALUATION','EVALUATE_ERRORS'):    
         eval_loc.match_and_eval_performance_scores(eval_args, eval_dir)
 
+    print("plot stage")
     cyclo = train_args.getint('Embedding','NUM_CYCLO')
     if eval_args.getboolean('PLOT','EMBEDDING_PCA'):
         embedding = sess.run(codebook.embedding_normalized)
+        print ("called compute_pca_plot_embedding")
         eval_plots.compute_pca_plot_embedding(eval_dir, embedding[::cyclo], np.array(test_embeddings[0]))
     if eval_args.getboolean('PLOT','VIEWSPHERE'):
         eval_plots.plot_viewsphere_for_embedding(dataset.viewsphere_for_embedding[::cyclo], eval_dir)
