@@ -149,7 +149,6 @@ def generate_scene_crops(test_imgs, test_depth_imgs, gt, eval_args, hw_ae, visib
                             depth_crop = depth[top:bottom, left:right]
                     else:
                         if not estimate_masks:
-                            print("not estimate_masks branch is invoked")
                             mask = inst_masks[view]
                             img_copy = np.zeros_like(img)
                             img_copy[mask == (bbox_idx+1)] = img[mask == (bbox_idx+1)]

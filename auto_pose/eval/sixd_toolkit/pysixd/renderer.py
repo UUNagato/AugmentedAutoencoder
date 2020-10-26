@@ -376,6 +376,7 @@ def render(model, im_size, K, R, t, clip_near=100, clip_far=2000,
     vertex_buffer = vertices.view(gloo.VertexBuffer)
     index_buffer = model['faces'].flatten().astype(np.uint32).view(gloo.IndexBuffer)
 
+    print ("Before create window")
     # Create window
     # config = app.configuration.Configuration()
     # Number of samples used around the current pixel for multisample
@@ -385,12 +386,15 @@ def render(model, im_size, K, R, t, clip_near=100, clip_far=2000,
     # window = app.Window(config=config, visible=False)
     window = app.Window(visible=False)
 
+    print ("after create window")
+
     global rgb, depth
     rgb = None
     depth = None
 
     @window.event
     def on_draw(dt):
+        print ("Ondraw is called")
         window.clear()
         shape = (im_size[1], im_size[0])
         if render_rgb:

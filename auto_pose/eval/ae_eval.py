@@ -170,16 +170,16 @@ def main():
             os.makedirs(scene_res_dir)
 
         for view in range(noof_scene_views):
-            #try:
-            test_crops, test_crops_depth, test_bbs, test_scores, test_visibs = eval_utils.select_img_crops(test_img_crops[view][obj_id], 
+            try:
+                test_crops, test_crops_depth, test_bbs, test_scores, test_visibs = eval_utils.select_img_crops(test_img_crops[view][obj_id], 
                                                                                                                test_img_depth_crops[view][obj_id] if icp else None,
                                                                                                                bbs[view][obj_id],
                                                                                                                bb_scores[view][obj_id], 
                                                                                                                visibilities[view][obj_id], 
                                                                                                                eval_args)
-            #except:
-            #    print('no detections')
-            #    continue
+            except:
+                print('no detections')
+                continue
 
             print(view)
             preds = {}
@@ -283,8 +283,11 @@ def main():
 
             # save predictions in sixd format
             res_path = os.path.join(scene_res_dir,'%04d_%02d.yml' % (view,obj_id))
+            print ("save results to res_path:{}".format(res_path))
             inout.save_results_sixd17(res_path, preds, run_time=run_time)
-            
+    
+    print ("eval_dir:{}, eval_args:{}".format(eval_dir, eval_args))
+    '''
     print("output stage")
     if not os.path.exists(os.path.join(eval_dir,'latex')):
         os.makedirs(os.path.join(eval_dir,'latex'))
@@ -296,15 +299,20 @@ def main():
     print("evaluation evaluate errors")
     if eval_args.getboolean('EVALUATION','EVALUATE_ERRORS'):    
         eval_loc.match_and_eval_performance_scores(eval_args, eval_dir)
-
+    '''
     print("plot stage")
     cyclo = train_args.getint('Embedding','NUM_CYCLO')
     if eval_args.getboolean('PLOT','EMBEDDING_PCA'):
         embedding = sess.run(codebook.embedding_normalized)
         print ("called compute_pca_plot_embedding")
+        print ("embedding shape and type:{},{}".format(embedding.shape, embedding.dtype))
+        print ("Cyclo is:{}".format(cyclo))
+
+        print (np.array(test_embeddings[0]))
         eval_plots.compute_pca_plot_embedding(eval_dir, embedding[::cyclo], np.array(test_embeddings[0]))
     if eval_args.getboolean('PLOT','VIEWSPHERE'):
         eval_plots.plot_viewsphere_for_embedding(dataset.viewsphere_for_embedding[::cyclo], eval_dir)
+    '''
     if eval_args.getboolean('PLOT','CUM_T_ERROR_HIST'):
         eval_plots.plot_t_err_hist(np.array(t_errors), eval_dir)
         eval_plots.plot_t_err_hist2(np.array(t_errors), eval_dir)
@@ -328,12 +336,13 @@ def main():
             pass
     if eval_args.getboolean('PLOT','ANIMATE_EMBEDDING_PCA'):
         eval_plots.animate_embedding_path(test_embeddings[0])
-
+    '''
+    '''
     report = latex_report.Report(eval_dir,log_dir)
     report.write_configuration(train_cfg_file_path,eval_cfg_file_path)
     report.merge_all_tex_files()
     report.include_all_figures()
     report.save(open_pdf=True)
-
+    '''
 if __name__ == '__main__':
     main()
