@@ -187,9 +187,10 @@ def main():
             all_test_visibs.append(test_visibs[0])
             t_errors_crop = []
             R_errors_crop = []
+
             
             for i, (test_crop, test_bb, test_score) in enumerate(zip(test_crops, test_bbs, test_scores)):    
-
+                # cv2.imwrite(os.path.join(workspace_path, "test_output", "test_crop_{}_{}_{}_{}.png".format(scene_id, view, obj_id, i)), test_crop)
                 start = time.time()
                 if train_args.getint('Dataset','C') == 1:
                     test_crop = cv2.cvtColor(test_crop,cv2.COLOR_BGR2GRAY)[:,:,None]
@@ -300,6 +301,7 @@ def main():
     if eval_args.getboolean('EVALUATION','EVALUATE_ERRORS'):    
         eval_loc.match_and_eval_performance_scores(eval_args, eval_dir)
     '''
+    '''
     print("plot stage")
     cyclo = train_args.getint('Embedding','NUM_CYCLO')
     if eval_args.getboolean('PLOT','EMBEDDING_PCA'):
@@ -312,6 +314,7 @@ def main():
         eval_plots.compute_pca_plot_embedding(eval_dir, embedding[::cyclo], np.array(test_embeddings[0]))
     if eval_args.getboolean('PLOT','VIEWSPHERE'):
         eval_plots.plot_viewsphere_for_embedding(dataset.viewsphere_for_embedding[::cyclo], eval_dir)
+    '''
     '''
     if eval_args.getboolean('PLOT','CUM_T_ERROR_HIST'):
         eval_plots.plot_t_err_hist(np.array(t_errors), eval_dir)
