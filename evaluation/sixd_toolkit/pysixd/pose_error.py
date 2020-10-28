@@ -8,10 +8,9 @@ import math
 import numpy as np
 from scipy import spatial
 from . import renderer, misc, visibility
-import matplotlib.pyplot as plt
 
 def vsd(R_est, t_est, R_gt, t_gt, model, depth_test, K, delta, tau,
-        cost_type='tlinear'):
+        cost_type='tlinear', need_visual=False):
     """
     Visible Surface Discrepancy.
 
@@ -39,18 +38,12 @@ def vsd(R_est, t_est, R_gt, t_gt, model, depth_test, K, delta, tau,
     depth_gt = renderer.render(model, im_size, K, R_gt, t_gt, clip_near=100,
                                clip_far=10000, mode='depth')
     
-    rgb_est = renderer.render(model, im_size, K, R_est, t_est, clip_near=100, clip_far=10000, mode='rgb')
-    
-    print ("est R:{}, t:{}".format(R_est, t_est))
-    print ("gt R:{}, t:{}".format(R_gt, t_gt))
-
-    plt.imshow(depth_est / np.max(depth_est + 1.) * 255, cmap=plt.get_cmap('gray'))
-    plt.show()
-    plt.imshow(depth_gt / np.max(depth_gt + 1.) * 255, cmap=plt.get_cmap('gray'))
-    plt.show()
-    print(rgb_est)
-    plt.imshow(rgb_est / np.max(rgb_est + 1.))
-    plt.show()
+    comp_pic = None
+    if need_visual:
+        rgb_est = renderer.render(model, im_size, K, R_est, t_est, clip_near=100, clip_far=10000, mode='rgb')
+        t_depth_est = np.repeat(depth_est[..., np.newaxis], 3, axis=2)          # repeat it to be three channels
+        t_depth_gt = np.repeat(depth_gt[..., np.newaxis], 3, axis=2)
+        comp_pic = (np.hstack((t_depth_est / np.max(depth_est + 1.), t_depth_gt / np.max(depth_gt + 1.), rgb_est / np.max(rgb_est + 1.))) * 255).astype(np.uint8)
 
     # Convert depth images to distance images
     dist_test = misc.depth_im_to_dist_im(depth_test, K)
@@ -92,7 +85,7 @@ def vsd(R_est, t_est, R_gt, t_gt, model, depth_test, K, delta, tau,
         e = (costs.sum() + visib_comp_count) / float(visib_union_count)
     else:
         e = 1.0
-    return e
+    return e, comp_pic
 
 def cou(R_est, t_est, R_gt, t_gt, model, im_size, K):
     """

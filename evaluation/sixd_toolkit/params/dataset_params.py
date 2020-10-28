@@ -13,10 +13,10 @@ def get_dataset_params(name, model_type='', train_type='', test_type='',
          'train_type': train_type, 'test_type': test_type, 'cam_type': cam_type}
 
     # Path to the folder with datasets
-    common_base_path = 'D:/MSRA/repos/Evaluation/eval_dataset'
+    common_base_path = 'C:/Users/v-xli2/repos/AugmentedAutoencoder/evaluation/dataset'
 
     # Path to the T-LESS Toolkit (https://github.com/thodan/t-less_toolkit)
-    tless_tk_path = 'D:/MSRA/repos/t-less_toolkit'
+    tless_tk_path = 'C:/Users/v-xli2/repos/AugmentedAutoencoder/evaluation/dataset/t-less_toolkit'
 
     if name == 'hinterstoisser':
         p['obj_count'] = 15

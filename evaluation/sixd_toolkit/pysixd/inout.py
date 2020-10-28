@@ -159,8 +159,9 @@ def load_errors(path):
         errors = yaml.load(f, Loader=yaml.CLoader)
     return errors
 
-def save_errors(path, errors):
-    with open(path, 'w') as f:
+def save_errors(path, errors, incremental=False):
+    mode = 'w' if not incremental else 'a'
+    with open(path, mode) as f:
         line_tpl = '- {{im_id: {:d}, obj_id: {:d}, est_id: {:d}, ' \
                        'score: {:.8f}, errors: {}}}\n'
         error_tpl = '{:d}: {:.8f}'

@@ -14,13 +14,10 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from sixd_toolkit.pysixd import inout, pose_error, misc
 from sixd_toolkit.params.dataset_params import get_dataset_params
 
-# debug to solve high memory occupation
-from pympler import tracker
-import gc
+# used to output processing images.
+import cv2
 
-
-
-def eval_calc_errors(eval_args, eval_dir, scene_list=None):
+def eval_calc_errors(eval_args, eval_dir, scene_list=None, img_range=None, silent=True):
     # Results for which the errors will be calculated
     #-------------------------------------------------------------------------------
 
@@ -110,9 +107,6 @@ def eval_calc_errors(eval_args, eval_dir, scene_list=None):
         print (scene_dirs)
 
         for scene_dir in scene_dirs:
-            gc.collect()
-            tr = tracker.SummaryTracker()
-
             scene_id = int(os.path.basename(scene_dir))
 
             # Load info and GT poses for the current scene
@@ -120,6 +114,14 @@ def eval_calc_errors(eval_args, eval_dir, scene_list=None):
             scene_gt = inout.load_gt(dp['scene_gt_mpath'].format(scene_id))
 
             res_paths = sorted(glob.glob(os.path.join(scene_dir, '*.yml')))
+
+            # if not silent, check output folder
+            if not silent:
+                debug_output_path = os.path.join(eval_dir, "./process_imgs", "./%02d" % scene_id)
+                if not os.path.exists(debug_output_path):
+                    print ("Create debug output folder:%s" % debug_output_path)
+                    os.makedirs(debug_output_path)
+
 
             errs = []
             im_id = -1
@@ -131,6 +133,10 @@ def eval_calc_errors(eval_args, eval_dir, scene_list=None):
                 filename = os.path.basename(res_path).split('.')[0]
                 im_id_prev = im_id
                 im_id, obj_id = map(int, filename.split('_'))
+
+                if img_range != None:
+                    if im_id < img_range[0] or im_id >= img_range[1]:
+                        continue            # it's not in the range
 
                 if res_id % 10 == 0:
                     dataset_str = dataset
@@ -172,6 +178,7 @@ def eval_calc_errors(eval_args, eval_dir, scene_list=None):
                     est_errs = []
                     R_e = est['R']
                     t_e = est['t']
+                    debug_pic = None
 
                     errs_gts = {} # Errors w.r.t. GT poses of the same object
                     for gt_id, gt in enumerate(scene_gt[im_id]):
@@ -183,9 +190,18 @@ def eval_calc_errors(eval_args, eval_dir, scene_list=None):
                         t_g = gt['cam_t_m2c']
 
                         if error_type == 'vsd':
-                            e = pose_error.vsd(R_e, t_e, R_g, t_g, models[obj_id],
+                            if silent or im_id % 50 != 0:
+                                e, debug_pic = pose_error.vsd(R_e, t_e, R_g, t_g, models[obj_id],
                                                depth_im, K, vsd_delta, vsd_tau,
-                                               vsd_cost)
+                                               vsd_cost, False)
+                            else:
+                                e, debug_pic = pose_error.vsd(R_e, t_e, R_g, t_g, models[obj_id],
+                                               depth_im, K, vsd_delta, vsd_tau,
+                                               vsd_cost, True)
+                                process_img_output_path = os.path.join(debug_output_path, "./%03d_%02d.jpg" % (im_id, obj_id))
+                                print ("Output process imgs to %s" % process_img_output_path)
+                                cv2.imwrite(process_img_output_path, debug_pic[..., ::-1])      # convert to BGR
+                                
                         elif error_type == 'add':
                             e = pose_error.add(R_e, t_e, R_g, t_g, models[obj_id])
                         elif error_type == 'adi':
@@ -211,19 +227,18 @@ def eval_calc_errors(eval_args, eval_dir, scene_list=None):
                         'score': est['score'],
                         'errors': errs_gts
                     })
+
                 # print('Evaluation time: {}s'.format(time.time() - t))
-            
-            tr.print_diff()
 
             print('Saving errors to {}'.format(result_path))
             errors_path = errors_mpath.format(result_path=result_path,
                                               error_sign=error_sign,
                                               scene_id=scene_id)
 
+            # if the error file exists, and img_range specified, then we add record to it
             misc.ensure_dir(os.path.dirname(errors_path))
-            inout.save_errors(errors_path, errs)
+            inout.save_errors(errors_path, errs, img_range != None)
 
             print('')
-            tr.print_diff()
     print('Done.')
     return True
