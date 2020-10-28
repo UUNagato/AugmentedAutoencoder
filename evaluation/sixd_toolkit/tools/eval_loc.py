@@ -130,13 +130,13 @@ def calc_scores(scene_ids, obj_ids, matches, n_top, do_print=True):
     obj_recalls = {}
     for i in obj_ids:
         obj_recalls[i] = calc_recall(obj_tps[i], obj_tars[i])
-    mean_obj_recall = float(np.mean(obj_recalls.values()).squeeze())
+    mean_obj_recall = float(np.mean(list(obj_recalls.values())).squeeze())
 
     # Recall per scene
     scene_recalls = {}
     for i in scene_ids:
         scene_recalls[i] = calc_recall(scene_tps[i], scene_tars[i])
-    mean_scene_recall = float(np.mean(scene_recalls.values()).squeeze())
+    mean_scene_recall = float(np.mean(list(scene_recalls.values())).squeeze())
 
     scores = {
         'total_recall': total_recall,

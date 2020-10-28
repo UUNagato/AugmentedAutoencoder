@@ -190,7 +190,7 @@ def eval_calc_errors(eval_args, eval_dir, scene_list=None, img_range=None, silen
                         t_g = gt['cam_t_m2c']
 
                         if error_type == 'vsd':
-                            if silent or im_id % 50 != 0:
+                            if silent or im_id % 25 != 0:
                                 e, debug_pic = pose_error.vsd(R_e, t_e, R_g, t_g, models[obj_id],
                                                depth_im, K, vsd_delta, vsd_tau,
                                                vsd_cost, False)

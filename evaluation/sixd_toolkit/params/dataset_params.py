@@ -172,7 +172,7 @@ def get_dataset_params(name, model_type='', train_type='', test_type='',
 
     p['scene_info_mpath'] = pjoin(p['base_path'], test_dir, './{:02d}', 'info.yml')
     p['scene_gt_mpath'] = pjoin(p['base_path'], test_dir, './{:02d}', 'gt.yml')
-    p['scene_gt_stats_mpath'] = pjoin(p['base_path'], test_dir + '_gt_stats', '{:02d}_delta={}.yml')
+    p['scene_gt_stats_mpath'] = pjoin(p['base_path'], test_dir + '_gt_stats', './{:02d}_delta={}.yml')
     p['test_rgb_mpath'] = pjoin(p['base_path'], test_dir, './{:02d}', 'rgb', './' + im_id_f + '.png')
     p['test_depth_mpath'] = pjoin(p['base_path'], test_dir, './{:02d}', 'depth', './' + im_id_f + '.png')
     p['test_mask_mpath'] = pjoin(p['base_path'], test_dir, './{:02d}', 'mask', './' + im_id_f + '_{:02d}.png')
