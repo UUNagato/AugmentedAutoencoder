@@ -57,11 +57,11 @@ def get_gt_scene_crops(scene_id, eval_args, train_args, load_gt_masks=False):
         gt_inst_masks = None
         if load_gt_masks:
             mask_paths = glob.glob(os.path.join(load_gt_masks, '{:02d}/masks/*.npy'.format(scene_id)))
+            mask_paths = sorted(mask_paths, key=lambda path: int(os.path.basename(path)[:-4]))
             gt_inst_masks = [np.load(mp) for mp in mask_paths] 
 
         test_img_crops, test_img_depth_crops, bbs, bb_scores, bb_vis = generate_scene_crops(test_imgs, test_imgs_depth, gt, eval_args, 
                                                                                             (H_AE, W_AE), visib_gt=visib_gt,inst_masks=gt_inst_masks)
-
 
         np.savez(current_file_name, test_img_crops=test_img_crops, test_img_depth_crops=test_img_depth_crops, bbs = bbs, bb_scores=bb_scores, visib_gt=bb_vis)
         
@@ -149,7 +149,7 @@ def generate_scene_crops(test_imgs, test_depth_imgs, gt, eval_args, hw_ae, visib
                             depth_crop = depth[top:bottom, left:right]
                     else:
                         if not estimate_masks:
-                            print("not estimate_masks branch is invoked")
+                            # debug output, remove later
                             mask = inst_masks[view]
                             img_copy = np.zeros_like(img)
                             img_copy[mask == (bbox_idx+1)] = img[mask == (bbox_idx+1)]

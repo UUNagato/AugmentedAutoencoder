@@ -41,7 +41,7 @@ def get_dataset_params(name, model_type='', train_type='', test_type='',
         p['obj_count'] = 30
         p['scene_count'] = 20
 
-        p['base_path'] = pjoin(common_base_path, 't-less', 't-less_v2')
+        p['base_path'] = pjoin(common_base_path, 't-less', 't-less')
         p['im_id_pad'] = 4
         p['model_texture_mpath'] = None
 

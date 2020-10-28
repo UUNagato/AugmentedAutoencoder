@@ -32,6 +32,7 @@ def vsd(R_est, t_est, R_gt, t_gt, model, depth_test, K, delta, tau,
     im_size = (depth_test.shape[1], depth_test.shape[0])
 
     # Render depth images of the model in the estimated and the ground truth pose
+    print ("before render:model is {}".format(model))
     depth_est = renderer.render(model, im_size, K, R_est, t_est, clip_near=100,
                                 clip_far=10000, mode='depth')
 
