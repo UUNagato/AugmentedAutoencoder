@@ -34,6 +34,7 @@ def main():
     parser.add_argument('--eval_cfg', default='eval.cfg', required=False)
     parser.add_argument('--at_step', default=None, type=str, required=False)
     parser.add_argument('--model_path', default=None, required=True)
+    parser.add_argument('--obj_id', type=int, default=None)
     arguments = parser.parse_args()
     full_name = arguments.experiment_name.split('/')
     experiment_name = full_name.pop()
@@ -57,7 +58,12 @@ def main():
     
     #[DATA]
     dataset_name = eval_args.get('DATA','DATASET')
-    obj_id = eval_args.getint('DATA','OBJ_ID')
+    if arguments.obj_id != None:
+        obj_id = arguments.obj_id               #override obj id so that we can use bash processing easier.
+        eval_args.set('DATA', 'OBJ_ID', str(arguments.obj_id))
+    else:
+        obj_id = eval_args.getint('DATA','OBJ_ID')
+    print ("Obj is:{}".format(obj_id))
     scenes = eval(eval_args.get('DATA','SCENES')) if len(eval(eval_args.get('DATA','SCENES'))) > 0 else eval_utils.get_all_scenes_for_obj(eval_args)
     cam_type = eval_args.get('DATA','cam_type')
     data_params = dataset_params.get_dataset_params(dataset_name, model_type='', train_type='', test_type=cam_type, cam_type=cam_type)
@@ -322,6 +328,7 @@ def main():
     if eval_args.getboolean('PLOT','CUM_R_ERROR_HIST'):
         eval_plots.plot_R_err_recall(eval_args, eval_dir, scenes)
         eval_plots.plot_R_err_hist2(np.array(R_errors), eval_dir)
+
     if eval_args.getboolean('PLOT','CUM_VSD_ERROR_HIST'):
         try:
             eval_plots.plot_vsd_err_hist(eval_args, eval_dir, scenes)
