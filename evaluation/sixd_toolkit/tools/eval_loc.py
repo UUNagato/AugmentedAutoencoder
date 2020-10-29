@@ -306,6 +306,7 @@ def match_and_eval_performance_scores(eval_args, eval_dir):
                 error_path=error_path, scene_id=scene_id)
 
             if os.path.isfile(scene_errs_path):
+                print ("Load error file:%s" % scene_errs_path)
                 errs = inout.load_errors(scene_errs_path)
 
                 matches += match_poses(gts, gt_stats, errs, scene_id,

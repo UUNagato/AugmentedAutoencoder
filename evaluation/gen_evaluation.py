@@ -41,7 +41,8 @@ def main():
         quit()
     
     with open(output, 'w') as f:
-        base_command = 'python evaluation.py --eval_dir="{}" --eval_cfg="{}" --scene_list="{}" --img_range="{}" --silent={}\n'
+        base_command = 'python evaluation.py --eval_dir="{}" --eval_cfg="{}" --scene_list="{}" --img_range="{}" --silent={} --summarize_error={} || exit /b\n'
+        # python command and terminate when an error happenes.
 
         for sid in range(1,max_scenes+1,scene_batch):
             next_scene_start = min(max_scenes + 1, sid + scene_batch)
@@ -49,7 +50,10 @@ def main():
 
             for iid in range(0, max_imgs, img_batch):
                 img_range = (iid, min(max_imgs + 1, iid + img_batch))
-                command = base_command.format(eval_dir, eval_cfg, scene_list, img_range, silent)
+                if sid + scene_batch >= max_scenes + 1 and iid + img_batch >= max_imgs:
+                    command = base_command.format(eval_dir, eval_cfg, scene_list, img_range, silent, True)
+                else:
+                    command = base_command.format(eval_dir, eval_cfg, scene_list, img_range, silent, False)
                 f.write(command)
 
 if __name__ == '__main__':

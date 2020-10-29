@@ -20,12 +20,15 @@ def main():
     # not necessary, specify a specific scene to make program deal with a subset of scenes to avoid too high memory occupation.
     parser.add_argument('-s', '--silent', help='if silent, it will not output process image', default=True) # silent mode will not output any pictures.            
     parser.add_argument('-i', '--img_range', help='A tuple for image id range (left inclusive, right exclusive)', default=None)
+    parser.add_argument('-se', '--summarize_error', help='whether or not to compute general error (use this after you compute all errors)', default=False)
 
     arguments = parser.parse_args()
 
     eval_dir = arguments.eval_dir
     eval_args = configparser.ConfigParser(inline_comment_prefixes='#')
     eval_args.read(arguments.eval_cfg)      # read config file
+
+    summary = eval(arguments.summarize_error)
 
     silent, scene_list, img_range = None, None, None
     if (arguments.silent != None):
@@ -50,7 +53,8 @@ def main():
         if (scene_list != None):
             print ("Subset {} is evaluated".format(scene_list))
         eval_calc_errors.eval_calc_errors(eval_args, eval_dir, scene_list, img_range, silent)
-    if eval_args.getboolean('EVALUATION','EVALUATE_ERRORS'):
+
+    if summary and eval_args.getboolean('EVALUATION','EVALUATE_ERRORS'):
         print ("Start to call eval_loc.match_and_eval_performance_scores")
         eval_loc.match_and_eval_performance_scores(eval_args, eval_dir)
 
