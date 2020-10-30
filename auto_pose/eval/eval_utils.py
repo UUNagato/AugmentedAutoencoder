@@ -107,6 +107,8 @@ def generate_scene_crops(test_imgs, test_depth_imgs, gt, eval_args, hw_ae, visib
     pad_factor = eval_args.getfloat('BBOXES','PAD_FACTOR')
     icp = eval_args.getboolean('EVALUATION','ICP')
 
+    single_instance = eval_args.getboolean('BBOXES', 'SINGLE_INSTANCE')
+
     estimate_masks = eval_args.getboolean('BBOXES','ESTIMATE_MASKS')
     print(hw_ae)
     H_AE, W_AE = hw_ae
@@ -132,6 +134,8 @@ def generate_scene_crops(test_imgs, test_depth_imgs, gt, eval_args, hw_ae, visib
                     bb_score = bbox['score'] if estimate_bbs else 1.0
                     if estimate_bbs and visib_gt is not None:
                         vis_frac = visib_gt[view][bbox_idx]['visib_fract']
+                    elif not single_instance:
+                        vis_frac = visib_gt[view][bbox_idx]['visib_fract']
                     else:
                         vis_frac = None
 
@@ -148,6 +152,7 @@ def generate_scene_crops(test_imgs, test_depth_imgs, gt, eval_args, hw_ae, visib
                         if icp:
                             depth_crop = depth[top:bottom, left:right]
                     else:
+                        print ("unexpected call")
                         if not estimate_masks:
                             # debug output, remove later
                             mask = inst_masks[view]
@@ -306,7 +311,7 @@ def select_img_crops(crop_candidates, test_crops_depth, bbs, bb_scores, visibs, 
     single_instance = eval_args.getboolean('BBOXES', 'SINGLE_INSTANCE')
     icp = eval_args.getboolean('EVALUATION', 'ICP')
 
-    print("select_img_crops bbox:{}".format(visibs))
+    # print("select_img_crops bbox:{}".format(visibs))
 
     if single_instance and estimate_bbs:
         idcs = np.array([np.argmax(bb_scores)])
