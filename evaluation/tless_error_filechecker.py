@@ -36,7 +36,9 @@ def main():
 
             data = YAML.load(f, Loader=YAML.Loader)
 
-            im_record = [0] * (im_max + 1)
+            im_record = []
+            for i in range(im_max + 1):
+                im_record.append([])
             for rec in data:
                 image_id = rec['im_id']
                 if image_id < 0 or image_id > im_max:
@@ -48,16 +50,16 @@ def main():
                     print ("The record %s has an invalid obj id %d in file %s" % (rec, obj_id, yml_file))
                     continue
                 
-                obj_bitcode = 0x1 << (obj_id - 1)
-                if (im_record[image_id] & obj_bitcode) != 0:
-                    print ("The record %s is duplicated in file %s" % (rec, yml_file))
-                    continue
-                im_record[image_id] = (im_record[image_id] | obj_bitcode)
+                for checkedRec in im_record[image_id]:
+                    if checkedRec['obj_id'] == obj_id and checkedRec['est_id'] == rec['est_id']:
+                        print ("The record %s is duplicated in file %s" % (rec, yml_file))
+                        break
+                im_record[image_id].append(rec)
             
             # check record number
-            standard = im_record[0]
+            n_record = len(im_record[0])
             for i, code in enumerate(im_record):
-                if code != standard:
+                if len(code) != n_record:
                     print ("file %s isn't consistent, image %d is different from image 0" % (yml_file, i))
 
 if __name__ == '__main__':

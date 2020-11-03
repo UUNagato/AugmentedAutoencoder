@@ -20,7 +20,8 @@ def main():
     # not necessary, specify a specific scene to make program deal with a subset of scenes to avoid too high memory occupation.
     parser.add_argument('-s', '--silent', help='if silent, it will not output process image', default=True) # silent mode will not output any pictures.            
     parser.add_argument('-i', '--img_range', help='A tuple for image id range (left inclusive, right exclusive)', default=None)
-    parser.add_argument('-se', '--summarize_error', help='whether or not to compute general error (use this after you compute all errors)', default=False)
+    parser.add_argument('-se', '--summarize_error', help='whether or not to compute general error (use this after you compute all errors)', default=None)
+    parser.add_argument('--only_summarize', help='This evaluation will only run final error summary.', default=None)
 
     arguments = parser.parse_args()
 
@@ -28,7 +29,20 @@ def main():
     eval_args = configparser.ConfigParser(inline_comment_prefixes='#')
     eval_args.read(arguments.eval_cfg)      # read config file
 
-    summary = eval(arguments.summarize_error)
+    summary = False
+    if arguments.summarize_error is not None:
+        summary = eval(arguments.summarize_error)
+    only_summarize = False
+    if arguments.only_summarize is not None:
+        print (arguments.only_summarize)
+        only_summarize = eval(arguments.only_summarize)
+
+    if only_summarize:
+        if not eval_args.getboolean('EVALUATION','EVALUATE_ERRORS'):
+            print ("Although only_summarize is specified, but the config file doesn't set EVALUATE_ERRORS to be true.")
+            quit()
+        eval_loc.match_and_eval_performance_scores(eval_args, eval_dir)
+        quit()
 
     silent, scene_list, img_range = None, None, None
     if (arguments.silent != None):

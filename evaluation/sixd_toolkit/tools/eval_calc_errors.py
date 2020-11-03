@@ -198,9 +198,10 @@ def eval_calc_errors(eval_args, eval_dir, scene_list=None, img_range=None, silen
                                 e, debug_pic = pose_error.vsd(R_e, t_e, R_g, t_g, models[obj_id],
                                                depth_im, K, vsd_delta, vsd_tau,
                                                vsd_cost, True)
-                                process_img_output_path = os.path.join(debug_output_path, "./%03d_%02d.jpg" % (im_id, obj_id))
-                                print ("Output process imgs to %s" % process_img_output_path)
-                                cv2.imwrite(process_img_output_path, debug_pic[..., ::-1])      # convert to BGR
+                                if e != 1.0:
+                                    process_img_output_path = os.path.join(debug_output_path, "./%03d_%02d_%d_%d.jpg" % (im_id, obj_id, gt_id, est_id))
+                                    print ("Output process imgs to %s" % process_img_output_path)
+                                    cv2.imwrite(process_img_output_path, debug_pic[..., ::-1])      # convert to BGR
                                 
                         elif error_type == 'add':
                             e = pose_error.add(R_e, t_e, R_g, t_g, models[obj_id])

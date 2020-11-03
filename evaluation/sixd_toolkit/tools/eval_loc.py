@@ -102,10 +102,9 @@ def calc_scores(scene_ids, obj_ids, matches, n_top, do_print=True):
     scene_tars = {i: 0 for i in scene_ids} # Targets per scene
     for obj_id, obj_insts in insts.items():
         for scene_id, scene_insts in obj_insts.items():
-
             # Count the number of targets in the current scene
             if n_top > 0:
-                count = sum(np.minimum(n_top, scene_insts.values()))
+                count = sum(np.minimum(n_top, list(scene_insts.values())))
             else:  # 0 = all estimates, -1 = given by the number of GT poses
                 count = sum(scene_insts.values())
 
@@ -359,6 +358,7 @@ def match_and_eval_performance_scores(eval_args, eval_dir):
             scores = calc_scores(scene_ids, obj_ids, matches, n_top)
 
             # Save scores
+            print ("Before save scores:{}".format(scores))
             scores_path = scores_mpath.format(
                 error_path=error_path, eval_sign=eval_sign)
             inout.save_yaml(scores_path, scores)
