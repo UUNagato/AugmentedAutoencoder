@@ -12,10 +12,12 @@ from NOCS_pose_error import decompose_transform_matrix
 parser = argparse.ArgumentParser()
 parser.add_argument('--path', help='Path to the dataset', required=True)
 parser.add_argument('--augmented', action='store_true')
+parser.add_argument('--crop', help='whether we should crop the image', action='store_true')
 parser.add_argument('--dataset', help='val/real_test', default='val')
 parser.add_argument('--no_uniformly_scaling', help='If specified, the cropped image may use a non uniformly scaling', action='store_true')
 parser.add_argument('--output', help='The output path', default='.')
 parser.add_argument('--debug', help='debug mode', action='store_true')
+parser.add_argument('--compressed', help='compress the output file', action='store_true')
 
 args = parser.parse_args()
 
@@ -222,38 +224,39 @@ def load_gt_data(folderpath:str, imgpath:str, img_id:str):
     # ======================================================================================
     # cropped the images and decompose the RTs
     # ======================================================================================
-    cropped_size = (128, 128)
-    mask_h, mask_w = masks.shape[0:2]
-
     image_patches = []
-    target_ratio = cropped_size[0] / cropped_size[1]
-    for i in range(masks.shape[2]):
-        # add a random extension to bbox, so that the object won't fill the whole image patch
-        extend = np.random.randint(1, 10, 4)
+    if (args.crop):
+        cropped_size = (128, 128)
+        mask_h, mask_w = masks.shape[0:2]
 
-        cropped_box = bbox[i].copy()
-        cropped_box[0] = max(0, cropped_box[0] - extend[0])
-        cropped_box[1] = max(0, cropped_box[1] - extend[1])
-        cropped_box[2] = min(mask_h, cropped_box[2] + extend[2])
-        cropped_box[3] = min(mask_w, cropped_box[3] + extend[3])
+        target_ratio = cropped_size[0] / cropped_size[1]
+        for i in range(masks.shape[2]):
+            # add a random extension to bbox, so that the object won't fill the whole image patch
+            extend = np.random.randint(1, 10, 4)
 
-        # if uniformly scaling, we need to make the patch the same ratio with cropped size
-        cropped_box = fit_cropped_box_ratio(cropped_box, (mask_h, mask_w), target_ratio)
+            cropped_box = bbox[i].copy()
+            cropped_box[0] = max(0, cropped_box[0] - extend[0])
+            cropped_box[1] = max(0, cropped_box[1] - extend[1])
+            cropped_box[2] = min(mask_h, cropped_box[2] + extend[2])
+            cropped_box[3] = min(mask_w, cropped_box[3] + extend[3])
 
-        # if a bad bbox is detected, skip this image
-        if cropped_box[0] < 0 or cropped_box[1] < 0 or cropped_box[2] > mask_h or cropped_box[3] > mask_w:
-            print ("A bad image {} is skipped".format(imgpath))
+            # if uniformly scaling, we need to make the patch the same ratio with cropped size
+            cropped_box = fit_cropped_box_ratio(cropped_box, (mask_h, mask_w), target_ratio)
+
+            # if a bad bbox is detected, skip this image
+            if cropped_box[0] < 0 or cropped_box[1] < 0 or cropped_box[2] > mask_h or cropped_box[3] > mask_w:
+                print ("A bad image {} is skipped".format(imgpath))
+                return None, None, None, None, None
+
+            # crop the image
+            patch_img = image[cropped_box[0]:cropped_box[2], cropped_box[1]:cropped_box[3]]
+            patch_img = cv2.resize(patch_img, cropped_size, interpolation=cv2.INTER_LINEAR)
+
+            image_patches.append(patch_img)
+        
+        if len(image_patches) == 0:
+            print ("An empty image {} is skipped".format(imgpath))
             return None, None, None, None, None
-
-        # crop the image
-        patch_img = image[cropped_box[0]:cropped_box[2], cropped_box[1]:cropped_box[3]]
-        patch_img = cv2.resize(patch_img, cropped_size, interpolation=cv2.INTER_LINEAR)
-
-        image_patches.append(patch_img)
-    
-    if len(image_patches) == 0:
-        print ("An empty image {} is skipped".format(imgpath))
-        return None, None, None, None, None
 
     # debug, show the patches.    
     if args.debug:
@@ -262,13 +265,17 @@ def load_gt_data(folderpath:str, imgpath:str, img_id:str):
         print (obj_dict)
         debug_showimg(image_patches, imgpath)
     
-    return image_patches, masks, RTs, inst_dict, obj_dict
+    return image_patches, masks, RTs, inst_dict, obj_dict, bbox
 
 def prepare_output(output_path, synset_names):
     class_num = len(synset_names)
     os.makedirs(output_path, exist_ok=True)
+    if (args.crop):
+        return [{"bgr_y_src":[], "matrix_rot_y":[], "matrix_tra_y":[], "scale_y":[], "obj_list":[]} \
+                    for i in range(class_num)]
 
-    return [{"bgr_y_src":[], "matrix_rot_y":[], "matrix_tra_y":[], "scale_y":[], "obj_list":[]}] * class_num
+    return [{"scene_id":[], "image_id":[], "class_id":[], "bbox":[], "matrix_rot_y":[], "matrix_tra_y":[], "scale_y":[], "obj_list":[]} \
+                    for i in range(class_num)]
 
 
 def process_CAMERA(path):
@@ -300,13 +307,14 @@ def process_CAMERA(path):
             # try to split image number
             img_name = os.path.split(img_path)[-1]
             img_id = img_name.split('_')[0]
-            patches, masks, RTs, inst_dict, obj_dict = load_gt_data(folder_path, img_path, img_id)
+            patches, masks, RTs, inst_dict, obj_dict, bbox = load_gt_data(folder_path, img_path, img_id)
 
             if patches is None:
                 continue
 
             assert len(inst_dict) == masks.shape[-1]
-            assert masks.shape[-1] == len(patches)
+            if args.crop:
+                assert masks.shape[-1] == len(patches)
             assert RTs.shape[0] == masks.shape[-1]
 
             inst_number = len(inst_dict)
@@ -316,24 +324,45 @@ def process_CAMERA(path):
                 cls_id = inst_dict[inst_keys[i]]
                 RT = RTs[i]
                 T, S, R = decompose_transform_matrix(RT)
-                output_list[cls_id]['bgr_y_src'].append(patches[i])
+                if (args.crop):
+                    output_list[cls_id]['bgr_y_src'].append(patches[i])
+                else:
+                    output_list[cls_id]['scene_id'].append(int(scene))
+                    output_list[cls_id]['image_id'].append(int(img_id))
+                    output_list[cls_id]['class_id'].append(cls_id)
+                    output_list[cls_id]['bbox'].append(bbox[i])
                 output_list[cls_id]['matrix_rot_y'].append(R)
                 output_list[cls_id]['matrix_tra_y'].append(T)
                 output_list[cls_id]['scale_y'].append(S)
                 output_list[cls_id]['obj_list'].append(obj_dict[inst_keys[i]])
     
     # finally, output these value
+    save_method = np.savez_compressed if args.compressed else np.savez
     for i in range(len(output_list)):
         output_file_name = synset_names[i] + "_encoder_data"
+        if args.compressed:
+            output_file_name += "_compressed"
         output_file_path = os.path.join(args.output, output_file_name)
 
         output_data = output_list[i]
-        np.savez(output_file_path, bgr_y_src=output_data['bgr_y_src'], matrix_rot_y=output_data['matrix_rot_y'], matrix_tra_y=output_data['matrix_tra_y'], \
+        print ("Saving to file:{}".format(output_file_path))
+        try:            # in case the IO exception terminate the program and get all computed data loss
+            if args.crop:
+                save_method(output_file_path, bgr_y_src=output_data['bgr_y_src'], matrix_rot_y=output_data['matrix_rot_y'], matrix_tra_y=output_data['matrix_tra_y'], \
+                        scale_y=output_data['scale_y'], obj_list=output_data['obj_list'])
+            else:
+                save_method(output_file_path, scene_id=output_data['scene_id'], image_id=output_data['image_id'], class_id=output_data['class_id'], \
+                    bbox=output_data['bbox'], matrix_rot_y=output_data['matrix_rot_y'], matrix_tra_y=output_data['matrix_tra_y'], \
                     scale_y=output_data['scale_y'], obj_list=output_data['obj_list'])
+        except Exception as e:
+            print ("Failed to save to {}".format(output_file_path))
+            e.print_exc()
 
 if __name__ == "__main__":
     dataset_path = args.path
     dataset_type = args.dataset
+
+    print ("Current configuration:\npath:{}\ndataset type:{}\noutput path:{}\naugmented:{}\ncropped:{}".format(dataset_path, dataset_type, args.output, args.augmented, args.crop))
     # check path
     if not os.path.exists(dataset_path) or not os.path.isdir(dataset_path):
         print ("The path {} is not a folder".format(dataset_path))
