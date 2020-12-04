@@ -95,12 +95,12 @@ def fit_cropped_box_ratio(cropped_box, image_size, target_ratio):
 def load_gt_data(folderpath:str, imgpath:str, img_id:str):
     if not img_id.isdigit():
         print ("An unexpected img_id {} is feed into load_gt_data.".format(img_id))
-        return None, None, None, None, None
+        return None, None, None, None, None, None
     meta_name = img_id + '_meta.txt'
     meta_path = os.path.join(folderpath, meta_name)
     if not os.path.exists(meta_path):
         print ("Warning: the meta file:{} cannot be found, so this image is skipped".format(meta_path))
-        return None, None, None, None, None
+        return None, None, None, None, None, None
     
     inst_dict = {}
     obj_dict = {}
@@ -124,7 +124,7 @@ def load_gt_data(folderpath:str, imgpath:str, img_id:str):
                 obj_dict[inst_id] = obj_path
     except Exception as e:
         print ("Failed with IO of meta file:{}".format(meta_path))
-        return None, None, None, None, None
+        return None, None, None, None, None, None
     
     # read image, coord (for transformation), mask
     base_path = os.path.join(folderpath, img_id)
@@ -153,7 +153,7 @@ def load_gt_data(folderpath:str, imgpath:str, img_id:str):
     instance_ids = sorted(instance_ids)
     if instance_ids[-1] != 255:
         print ("A wrong sample is detected, and thus skipped. {}".format(imgpath))
-        return None, None, None, None, None
+        return None, None, None, None, None, None
     del instance_ids[-1]        # remove the background id 255.
     
     cdata[cdata==255] = -1
@@ -219,7 +219,7 @@ def load_gt_data(folderpath:str, imgpath:str, img_id:str):
 
     if len(error_message):
        print ("[ Error ]: Error {} happened when aligning the coordinates".format(error_message))
-       return None, None, None, None, None
+       return None, None, None, None, None, None
 
     # ======================================================================================
     # cropped the images and decompose the RTs
@@ -246,7 +246,7 @@ def load_gt_data(folderpath:str, imgpath:str, img_id:str):
             # if a bad bbox is detected, skip this image
             if cropped_box[0] < 0 or cropped_box[1] < 0 or cropped_box[2] > mask_h or cropped_box[3] > mask_w:
                 print ("A bad image {} is skipped".format(imgpath))
-                return None, None, None, None, None
+                return None, None, None, None, None, None
 
             # crop the image
             patch_img = image[cropped_box[0]:cropped_box[2], cropped_box[1]:cropped_box[3]]
@@ -256,7 +256,7 @@ def load_gt_data(folderpath:str, imgpath:str, img_id:str):
         
         if len(image_patches) == 0:
             print ("An empty image {} is skipped".format(imgpath))
-            return None, None, None, None, None
+            return None, None, None, None, None, None
 
     # debug, show the patches.    
     if args.debug:
